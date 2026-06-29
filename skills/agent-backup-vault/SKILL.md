@@ -12,6 +12,8 @@ description: |
 
 不要把必要备份只留在本机或正在操作的远程机器上。先上传备份，再改东西。
 
+默认按 Ponytail：能不备份就不备份；真正有回滚价值才备份。不要为了“看起来安全”备份缓存、构建产物、包下载目录、可重建文件。
+
 ## 最常用
 
 ```bash
@@ -47,6 +49,7 @@ python3 ~/.hermes/skills/general/agent-backup-vault/scripts/agent_backup.py put 
 - 只回备份 `id`、大小、sha256 前 12 位、搜索关键词。
 - 需要确认时运行 `search` 或 `get`，不要展开远程文件全文。
 - 目录会自动打成 `.tar.gz`，比逐文件列目录省 token 也省空间。
+- 如果只是 Git 已跟踪文件，优先用 `git diff`/commit，不额外备份整份仓库。
 
 ## 安全
 
