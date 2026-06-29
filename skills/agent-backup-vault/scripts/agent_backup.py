@@ -33,18 +33,28 @@ def join_url(base, *parts):
     return url + quoted
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def request(cfg, method, path='', body=None, headers=None, ok=(200, 201, 204, 207)):
-    h = auth_header(cfg)
+    h = {'User-Agent': 'curl/8.0 agent-backup-vault'}
+    h.update(auth_header(cfg))
     if headers:
         h.update(headers)
     req = urllib.request.Request(join_url(cfg['url'], path), data=body, headers=h, method=method)
+    opener = urllib.request.build_opener(NoRedirect) if method == 'GET' else urllib.request.build_opener()
     try:
-        with urllib.request.urlopen(req, timeout=60) as r:
+        with opener.open(req, timeout=60) as r:
             data = r.read()
             if r.status not in ok:
                 raise SystemExit(f'{method} {path}: HTTP {r.status}')
             return r.status, data
     except urllib.error.HTTPError as e:
+        if method == 'GET' and e.code in (301, 302, 303, 307, 308) and e.headers.get('Location'):
+            with urllib.request.urlopen(urllib.request.Request(e.headers['Location'], headers={'User-Agent': h['User-Agent']}), timeout=60) as r:
+                return r.status, r.read()
         if e.code not in ok:
             raise SystemExit(f'{method} {path}: HTTP {e.code} {e.read().decode(errors="ignore")[:200]}')
         return e.code, e.read()
@@ -54,7 +64,7 @@ def mkdirp(cfg, path):
     cur = ''
     for part in [p for p in path.split('/') if p]:
         cur = f'{cur}/{part}' if cur else part
-        request(cfg, 'MKCOL', cur, ok=(200, 201, 204, 405))
+        request(cfg, 'MKCOL', cur, ok=(200, 201, 204, 403, 405))  # ponytail: some WebDAVs auto-create parents but forbid MKCOL
 
 
 def sha256_file(path):
@@ -178,7 +188,7 @@ def cmd_rm(args):
     matches = [r for r in rows if r['id'] == args.backup_id or r['id'].startswith(args.backup_id)]
     if len(matches) != 1:
         raise SystemExit(f'expected one match, got {len(matches)}')
-    request(cfg, 'DELETE', matches[0]['path'], ok=(200, 202, 204, 404))
+    request(cfg, 'DELETE', matches[0]['path'], ok=(200, 202, 204, 403, 404))
     print('deleted object only; index retained:', matches[0]['id'])
 
 
