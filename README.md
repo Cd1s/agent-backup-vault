@@ -45,10 +45,6 @@ cp -a skills/agent-backup-vault ~/.hermes/skills/general/
 
 只让 agent 汇报备份 `id`、大小、sha256 前 12 位和搜索关键词；不要展开备份内容。Git 已跟踪文件优先用 diff/commit，不备份整仓。
 
-## Ponytail
-
-默认 Ponytail：真正有回滚价值才备份；缓存、构建产物、包下载目录、可重建文件不传。
-
 ## 设计取舍
 
 先用 stdlib CLI。MCP 暂不做；需要在客户端 UI 里浏览/恢复或多目标自动 fanout 时再加。
