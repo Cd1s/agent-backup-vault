@@ -1,51 +1,50 @@
 # agent-backup-vault
 
-One boring rule for agents: if something needs a backup, put it in WebDAV, not on the machine being changed.
+给 agent 用的远程备份库：需要备份时传到 WebDAV，不放本机或正在操作的服务器。
 
-This repo ships a tiny stdlib-only WebDAV backup CLI plus an agent skill. It is meant for config snapshots, database dumps, automation files, and small/medium operational backups.
-
-## Install
+## 安装
 
 ```bash
 python3 skills/agent-backup-vault/scripts/agent_backup.py init \
   --url 'https://dav.example.com/dav' \
   --user 'you@example.com'
-# password is prompted and stored in ~/.config/agent-backup-vault/config.json mode 600
 ```
 
-## Use
+密码会提示输入，保存到 `~/.config/agent-backup-vault/config.json`，权限 `600`。
+
+## 使用
 
 ```bash
-# upload file or directory; directories become .tar.gz
+# 备份文件或目录；目录自动打成 .tar.gz
 python3 skills/agent-backup-vault/scripts/agent_backup.py put /path/to/file --label before-edit
 
-# search remote backup index
+# 搜索远程索引
 python3 skills/agent-backup-vault/scripts/agent_backup.py search nginx
 
-# download by backup id
-python3 skills/agent-backup-vault/scripts/agent_backup.py get 20260629T054500Z-host-before-edit-file.conf
+# 按备份 id 下载
+python3 skills/agent-backup-vault/scripts/agent_backup.py get BACKUP_ID --output ./restore
 
-# verify WebDAV login
+# 检查 WebDAV 登录
 python3 skills/agent-backup-vault/scripts/agent_backup.py check
 ```
 
-Backups are content-addressed with a SHA-256 recorded in `index.jsonl`. Uploads use timestamped immutable names, so normal agent work should not overwrite prior backups.
-
-## Multiple disks / multiple WebDAV targets
-
-Use profiles:
+## 多 WebDAV / 多磁盘
 
 ```bash
 python3 skills/agent-backup-vault/scripts/agent_backup.py init --profile home-mac --url 'https://mac.example/dav' --user user
 python3 skills/agent-backup-vault/scripts/agent_backup.py put ./db.sql --profile home-mac
 ```
 
-For heavy jobs, keep this as the storage primitive. Add an MCP only when agents need interactive browse/restore inside a client UI; it can shell out to this CLI instead of reimplementing WebDAV.
-
-## Skill
-
-Install/copy `skills/agent-backup-vault/` into an agent runtime skill directory. For Hermes local use:
+## 给 Hermes 安装
 
 ```bash
 cp -a skills/agent-backup-vault ~/.hermes/skills/general/
 ```
+
+## 省 token
+
+只让 agent 汇报备份 `id`、大小、sha256 前 12 位和搜索关键词；不要展开备份内容。
+
+## 设计取舍
+
+先用 stdlib CLI。MCP 暂不做；需要在客户端 UI 里浏览/恢复或多目标自动 fanout 时再加。
