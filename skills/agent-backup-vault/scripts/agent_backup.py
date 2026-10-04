@@ -358,7 +358,8 @@ def cmd_rm(args):
     if cfg.get('index') == 'sidecar':
         request(cfg, 'DELETE', r['path'] + '.meta.json', ok=(200, 202, 204, 404))
     action = 'already_absent' if status == 404 else 'deleted'
-    print(json.dumps({'id': r['id'], 'action': action, 'index_retained': True}))
+    # Sidecar rows drop out of the index once the server sees the object is gone; legacy rows are kept.
+    print(json.dumps({'id': r['id'], 'action': action, 'index_retained': cfg.get('index') != 'sidecar'}))
 
 
 def add_profile(parser):
