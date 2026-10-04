@@ -239,6 +239,7 @@ def cmd_put(args):
             'source': args.source, 'name': display_name, 'size': size, 'sha256': digest, 'path': remote_path,
         }
         if sidecar:
+            record['index'] = 'sidecar'
             # Server-side cron folds *.meta.json into index.jsonl; no client read-modify-write race.
             request(cfg, 'PUT', remote_path + '.meta.json', (json.dumps(record, ensure_ascii=False) + '\n').encode(),
                     {'Content-Type': 'application/json'})

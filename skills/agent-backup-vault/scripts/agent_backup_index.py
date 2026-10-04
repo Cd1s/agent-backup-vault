@@ -28,8 +28,12 @@ for d, _, files in os.walk(root):
                 with open(os.path.join(d, n), encoding='utf-8') as f: add(f.read())
             except OSError:
                 pass
-if len(rows) == before and os.path.exists(index):
+# Sidecar-written rows whose object was deleted (`rm`) drop out; legacy/imported rows are kept as-is.
+base = os.path.dirname(root.rstrip('/'))
+kept = [r for r in rows if r.get('index') != 'sidecar' or os.path.exists(os.path.join(base, r.get('path', '')))]
+if len(kept) == len(rows) == before and os.path.exists(index):
     sys.exit(0)
+rows = kept
 rows.sort(key=lambda r: (r.get('time_utc', ''), r['id']))
 fd, tmp = tempfile.mkstemp(dir=root, prefix='.index.')
 with os.fdopen(fd, 'w', encoding='utf-8') as f:

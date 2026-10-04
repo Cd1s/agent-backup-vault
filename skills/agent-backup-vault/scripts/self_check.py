@@ -64,5 +64,7 @@ assert rec2['id'] in run('search', '--profile', 'sc', 'sc-check').stdout
 rec3 = json.loads(run('put', '--profile', 'sc', str(big), '--label', 'sc-check').stdout)
 assert rec3.get('reused') and rec3['id'] == rec2['id']
 run('rm', '--profile', 'sc', rec2['id'])
+subprocess.run([sys.executable, str(SCRIPT.with_name('agent_backup_index.py')), str(ROOT / 'dav' / 'agent-backups')], check=True)
+assert rec2['id'] not in run('search', '--profile', 'sc', 'sc-check').stdout
 assert not (ROOT / rec2['path'].replace('agent-backups', 'dav/agent-backups', 1)).exists()
 print('self-check ok')
